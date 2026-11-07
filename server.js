@@ -3,6 +3,9 @@ const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle,
 const cors = require('cors');
 
 const app = express();
+app.get('/', (req, res) => {
+    res.status(200).send('Bot en ligne !');
+});
 app.use(cors());
 app.use(express.json());
 
